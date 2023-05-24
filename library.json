@@ -1,0 +1,22 @@
+{
+	"name": "CF-MH201-Card-Reader",
+	"version": "0.0.1",
+	"description": "This library is specifically designed for the CF-MH201 Card Reader Chip produced by Chafon Technology. It is compatible with ISO1443A/Type1-4th NFC cards.",
+	"keywords": "Serial, messaging, NFC, Card Reader, arduino",
+	"authors": [
+		{
+			"name": "Dugar Badagarov",
+			"email": "hustonashford@gmail.com"
+		},
+		{
+			"name": "Adyasuren Jargalsaikhan",
+			"email": "adiya21j@gmail.com"
+		}
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/HoustonAsh/CF-MH201-Card-Reader.git"
+	},
+	"frameworks": "*",
+	"platforms": "*"
+}
