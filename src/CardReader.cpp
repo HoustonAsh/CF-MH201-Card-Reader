@@ -31,12 +31,14 @@
 
 using namespace CFMH201::FrameBytes;
 
-byte CardReader::readCardCommand[CARD_READ_CMD_LEN] = {
-  CARD_STX, CARD_STATION_ID, CARD_READ_BUFF_LEN, CARD_CMD_READ, // 2,0,10,32
-  CARD_REQ, CARD_RD_NUMBER_OF_BLOCK, CARD_STX_ADDRESS_BLOCK, //1,1,4
+const byte CardReader::readCardCommand[CFMH201::FrameBytes::CARD_READ_CMD_LEN] = {
+  CARD_STX, CARD_STATION_ID, CARD_READ_BUFF_LEN, CARD_CMD_READ,
+  CARD_REQ, CARD_RD_NUMBER_OF_BLOCK, CARD_STX_ADDRESS_BLOCK,
   CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY,
-  CARD_READ_COMMAND_BCC, CARD_ETX
+  CARD_READ_COMMAND_BCC, CARD_ETX,
 };
+
+
 byte CardReader::CardUID[CARD_UID_LEN] = { 0, 0, 0, 0 };
 byte CardReader::CardUIDold[CARD_UID_LEN] = { 0xFF, 0xFF, 0xFF, 0xFF };
 
@@ -68,68 +70,45 @@ CardReader::CardReader(
 
 
 void CardReader::setup() {
-  serial.begin(CARD_READER_BAUDRATE);
+  serial.begin(9600);
   serial.setTimeout(0);
 }
 
 
-uint8_t CardReader::calcBCC(uint8_t* buffer, uint8_t buffSize) {
+uint8_t CardReader::calcBCC(const byte* buffer, uint8_t buffSize) {
   uint8_t BCC = buffer[1];
   for (int i = 2; i < (buffSize - 2); ++i)
     BCC ^= buffer[i];
   return BCC;
 }
 
-bool CardReader::checkPacket(uint8_t* buffer, uint8_t buffSize) {
-  uint8_t respBCC = buffer[1];
-  for (int i = 2; i < buffSize - 2; ++i)
-    respBCC ^= buffer[i];
-  return buffer[buffSize - 2] == respBCC;
-}
-
 /* Read bytes from card reader via serial */
 bool CardReader::readCardBytes() {
   if (!serial.available()) return false;
+  int aa = serial.readBytes(incomingBytes, RESP_LENGTH);
 
-  int it = 0;
-  while (serial.available()) {
-    incomingBytes[it] = serial.read();
-    ++it;
-    if (it == CARD_READ_RESP_LENGTH)
-      return true;
-  }
-  // size_t res = serial.readBytes(incomingBytes, CARD_READ_RESP_LENGTH);
-  return false;
+  return aa == RESP_LENGTH;
 }
-
-// This Function will be used for pin validation in future updates
-/* Write card command prepare and dump via serial
-void CardReader::cmdWriteCard() {
-  uint8_t buffer[CARD_WRITE_CMD_LEN] = { CARD_STX, CARD_STATION_ID, CARD_WRITE_BUFF_LEN, CARD_CMD_WRITE,
-                                        CARD_REQ, CARD_WRT_NUMBER_OF_BLOCK, CARD_STX_ADDRESS_BLOCK,
-                                        CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY,
-    CARD_PIN, CARD_PIN, CARD_PIN, CARD_PIN,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    calcBCC(buffer, CARD_WRITE_CMD_LEN), CARD_ETX };
-
-  serial.write(buffer, sizeof(buffer));
-}
-*/
 
 /* Needs to be called in your loop function */
 void CardReader::process() {
+  static int it = 0;
+  static int64_t loopCnt = 0;
   if ((++loopCnt) % priority) return;
   if (millis() - requestTime > requestFrequency) {
-    requestTime = millis();
-    serial.write(readCardCommand, CARD_READ_CMD_LEN);
+    serial.write(readCardCommand[it]);
+    ++it;
+    if (it == CARD_READ_CMD_LEN) {
+      requestTime = millis();
+      it = 0;
+    }
   }
 
   if (!readCardBytes()) return;
-  if (!checkPacket(incomingBytes, CARD_READ_RESP_LENGTH)) return;
+  if (calcBCC(incomingBytes, RESP_LENGTH) != incomingBytes[RESP_LENGTH - 2])
+    return;
 
-  for (int i = 4; i < 4 + CARD_UID_LEN; ++i)
-    CardUID[i - 4] = incomingBytes[i];
-
+  memcpy(CardUID, incomingBytes + 4, CARD_UID_LEN);
   if (memcmp(CardUIDold, CardUID, CARD_UID_LEN)) {
     memcpy(CardUIDold, CardUID, CARD_UID_LEN);
     return;

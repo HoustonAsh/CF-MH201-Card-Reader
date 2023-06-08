@@ -33,36 +33,36 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
-namespace CFMH201::FrameBytes {}
+namespace CFMH201::FrameBytes {
+  constexpr const byte CARD_STX = 0x02;
+  constexpr const byte CARD_STATION_ID = 0x00;
+  constexpr const byte CARD_READ_BUFF_LEN = 0x0A;
+  constexpr const byte CARD_WRITE_BUFF_LEN = 0x1A;
+  constexpr const byte CARD_CMD_READ = 0x20;
+  constexpr const byte CARD_CMD_WRITE = 0x21;
+  constexpr const byte CARD_KEY = 0xFF;
+  constexpr const byte CARD_REQ = 0x01;
+  constexpr const byte CARD_RD_NUMBER_OF_BLOCK = 0x01;
+  constexpr const byte CARD_WRT_NUMBER_OF_BLOCK = 0x01;
+  constexpr const byte CARD_STX_ADDRESS_BLOCK = 0x04;
+  constexpr const byte CARD_BCC = 0x00;
+  constexpr const byte CARD_ETX = 0x03;
+  constexpr const byte CARD_PIN = 0x21;
+  constexpr const byte CARD_WRITE_CMD_LEN = 0x1F;
+  constexpr const byte RESP_LENGTH = 26;
+  constexpr const byte CARD_READ_COMMAND_BCC = 0x2e;
+  constexpr const uint8_t CARD_UID_LEN = 4;
+
+  constexpr const byte CARD_READ_CMD_LEN = 15;
+}
 
 class CardReader {
-  static const byte CARD_STX = 0x02;
-  static const byte CARD_STATION_ID = 0x00;
-  static const byte CARD_READ_BUFF_LEN = 0x0A;
-  static const byte CARD_WRITE_BUFF_LEN = 0x1A;
-  static const byte CARD_CMD_READ = 0x20;
-  static const byte CARD_CMD_WRITE = 0x21;
-  static const byte CARD_KEY = 0xFF;
-  static const byte CARD_REQ = 0x01;
-  static const byte CARD_RD_NUMBER_OF_BLOCK = 0x01;
-  static const byte CARD_WRT_NUMBER_OF_BLOCK = 0x01;
-  static const byte CARD_STX_ADDRESS_BLOCK = 0x04;
-  static const byte CARD_BCC = 0x00;
-  static const byte CARD_ETX = 0x03;
-  static const byte CARD_PIN = 0x21;
-  static const byte CARD_READ_CMD_LEN = 0x0F;
-  static const byte CARD_WRITE_CMD_LEN = 0x1F;
-  static const byte CARD_READ_RESP_LENGTH = 0x1A;
-  static const byte CARD_READ_COMMAND_BCC = 0x2e;
-  static const uint8_t CARD_UID_LEN = 4;
-  static const int CARD_READER_BAUDRATE = 9600;
+  static const byte readCardCommand[CFMH201::FrameBytes::CARD_READ_CMD_LEN];
 
-  static uint8_t CardUID[CARD_UID_LEN];
-  static uint8_t CardUIDold[CARD_UID_LEN];
-  uint8_t incomingBytes[CARD_READ_RESP_LENGTH];
+  static uint8_t CardUID[CFMH201::FrameBytes::CARD_UID_LEN];
+  static uint8_t CardUIDold[CFMH201::FrameBytes::CARD_UID_LEN];
+  uint8_t incomingBytes[CFMH201::FrameBytes::RESP_LENGTH];
 
-  static byte readCardCommand[CARD_READ_CMD_LEN];
-  int64_t loopCnt = 0;
   int64_t requestTime = 0;
   bool requestSent;
 
@@ -91,9 +91,7 @@ public:
 private:
   uint64_t startMillis;
   bool readCardBytes();
-  static uint8_t calcBCC(uint8_t* buffer, uint8_t buffSize);
-  void cmdWriteCard();
-  bool checkPacket(uint8_t* buffer, uint8_t buffSize);
+  static uint8_t calcBCC(const byte* buffer, uint8_t buffSize);
 };
 
 #endif
