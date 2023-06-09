@@ -33,27 +33,27 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
-#define  CARD_STX                 0x02
-#define  CARD_STATION_ID          0x00
-#define  CARD_READ_BUFF_LEN       0x0A
-#define  CARD_WRITE_BUFF_LEN      0x1A
-#define  CARD_CMD_READ            0x20
-#define  CARD_CMD_WRITE           0x21
-#define  CARD_KEY                 0xFF
-#define  CARD_REQ                 0x01
-#define  CARD_RD_NUMBER_OF_BLOCK  0x01
-#define  CARD_WRT_NUMBER_OF_BLOCK 0x01
-#define  CARD_STX_ADDRESS_BLOCK   0x04
-#define  CARD_BCC                 0x00
-#define  CARD_ETX                 0x03
-#define  CARD_PIN                 0x21
-#define  CARD_WRITE_CMD_LEN       0x1F
-#define  CARD_READ_COMMAND_BCC    0x2e
+#define CARD_STX                 0x02
+#define CARD_STATION_ID          0x00
+#define CARD_READ_BUFF_LEN       0x0A
+#define CARD_WRITE_BUFF_LEN      0x1A
+#define CARD_CMD_READ            0x20
+#define CARD_CMD_WRITE           0x21
+#define CARD_KEY                 0xFF
+#define CARD_REQ                 0x01
+#define CARD_RD_NUMBER_OF_BLOCK  0x01
+#define CARD_WRT_NUMBER_OF_BLOCK 0x01
+#define CARD_STX_ADDRESS_BLOCK   0x04
+#define CARD_BCC                 0x00
+#define CARD_ETX                 0x03
+#define CARD_PIN                 0x21
+#define CARD_WRITE_CMD_LEN       0x1F
+#define CARD_READ_COMMAND_BCC    0x2e
 
-#define  RESP_LENGTH              26
-#define  CARD_UID_LEN             4
-#define  CARD_READ_CMD_LEN        15
-
+#define CARD_READ_CMD_LEN        15
+#define RESP_LENGTH              26
+#define CARD_UID_LEN             4
+#define CARD_UID_OFFSET          4
 #define SERIAL_READ_TICK_TIMEOUT 5
 
 class CardReader {

@@ -81,8 +81,8 @@ void CardReader::setup() {
 
 
 uint8_t CardReader::calcBCC(const byte* buffer, uint8_t buffSize) {
-  uint8_t BCC = buffer[1];
-  for (int i = 2; i < (buffSize - 2); ++i)
+  uint8_t BCC = 0;
+  for (int i = 1; i < (buffSize - 2); ++i)
     BCC ^= buffer[i];
   return BCC;
 }
@@ -121,11 +121,12 @@ void CardReader::process() {
   if (calcBCC(incomingBytes, RESP_LENGTH) != incomingBytes[RESP_LENGTH - 2])
     return;
 
-  memcpy(CardUID, incomingBytes + 4, CARD_UID_LEN);
+  memcpy(CardUID, incomingBytes + CARD_UID_OFFSET, CARD_UID_LEN);
   if (memcmp(CardUIDold, CardUID, CARD_UID_LEN)) {
     memcpy(CardUIDold, CardUID, CARD_UID_LEN);
     return;
   }
+  memset(CardUIDold, 0, CARD_UID_LEN);
   if (callback != nullptr)
     callback(CardUID);
   return;
