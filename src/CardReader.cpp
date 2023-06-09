@@ -29,13 +29,19 @@
 
 #include "CardReader.h"
 
-using namespace CFMH201::FrameBytes;
-
-const byte CardReader::readCardCommand[CFMH201::FrameBytes::CARD_READ_CMD_LEN] = {
-  CARD_STX, CARD_STATION_ID, CARD_READ_BUFF_LEN, CARD_CMD_READ,
-  CARD_REQ, CARD_RD_NUMBER_OF_BLOCK, CARD_STX_ADDRESS_BLOCK,
-  CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY, CARD_KEY,
-  CARD_READ_COMMAND_BCC, CARD_ETX,
+const byte CardReader::readCardCommand[CARD_READ_CMD_LEN] = {
+  CARD_STX,
+  CARD_STATION_ID,
+  CARD_READ_BUFF_LEN,
+  CARD_CMD_READ,
+  CARD_REQ,
+  CARD_RD_NUMBER_OF_BLOCK,
+  CARD_STX_ADDRESS_BLOCK,
+  CARD_KEY, CARD_KEY,
+  CARD_KEY, CARD_KEY,
+  CARD_KEY, CARD_KEY,
+  CARD_READ_COMMAND_BCC,
+  CARD_ETX,
 };
 
 
@@ -71,7 +77,6 @@ CardReader::CardReader(
 
 void CardReader::setup() {
   serial.begin(9600);
-  serial.setTimeout(0);
 }
 
 
@@ -84,10 +89,18 @@ uint8_t CardReader::calcBCC(const byte* buffer, uint8_t buffSize) {
 
 /* Read bytes from card reader via serial */
 bool CardReader::readCardBytes() {
-  if (!serial.available()) return false;
-  int aa = serial.readBytes(incomingBytes, RESP_LENGTH);
+  if (serial.available() <= 0) return false;
+  for (int i = 0; i < RESP_LENGTH; i++) {
+    int a = 0;
+    while (serial.available() <= 0) {
+      delayMicroseconds(1);
+      if (++a > SERIAL_READ_TICK_TIMEOUT)
+        return false;
+    }
 
-  return aa == RESP_LENGTH;
+    incomingBytes[i] = serial.read();
+  }
+  return true;
 }
 
 /* Needs to be called in your loop function */

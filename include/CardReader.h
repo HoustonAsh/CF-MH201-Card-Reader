@@ -33,35 +33,35 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 
-namespace CFMH201::FrameBytes {
-  constexpr const byte CARD_STX = 0x02;
-  constexpr const byte CARD_STATION_ID = 0x00;
-  constexpr const byte CARD_READ_BUFF_LEN = 0x0A;
-  constexpr const byte CARD_WRITE_BUFF_LEN = 0x1A;
-  constexpr const byte CARD_CMD_READ = 0x20;
-  constexpr const byte CARD_CMD_WRITE = 0x21;
-  constexpr const byte CARD_KEY = 0xFF;
-  constexpr const byte CARD_REQ = 0x01;
-  constexpr const byte CARD_RD_NUMBER_OF_BLOCK = 0x01;
-  constexpr const byte CARD_WRT_NUMBER_OF_BLOCK = 0x01;
-  constexpr const byte CARD_STX_ADDRESS_BLOCK = 0x04;
-  constexpr const byte CARD_BCC = 0x00;
-  constexpr const byte CARD_ETX = 0x03;
-  constexpr const byte CARD_PIN = 0x21;
-  constexpr const byte CARD_WRITE_CMD_LEN = 0x1F;
-  constexpr const byte RESP_LENGTH = 26;
-  constexpr const byte CARD_READ_COMMAND_BCC = 0x2e;
-  constexpr const uint8_t CARD_UID_LEN = 4;
+#define  CARD_STX                 0x02
+#define  CARD_STATION_ID          0x00
+#define  CARD_READ_BUFF_LEN       0x0A
+#define  CARD_WRITE_BUFF_LEN      0x1A
+#define  CARD_CMD_READ            0x20
+#define  CARD_CMD_WRITE           0x21
+#define  CARD_KEY                 0xFF
+#define  CARD_REQ                 0x01
+#define  CARD_RD_NUMBER_OF_BLOCK  0x01
+#define  CARD_WRT_NUMBER_OF_BLOCK 0x01
+#define  CARD_STX_ADDRESS_BLOCK   0x04
+#define  CARD_BCC                 0x00
+#define  CARD_ETX                 0x03
+#define  CARD_PIN                 0x21
+#define  CARD_WRITE_CMD_LEN       0x1F
+#define  CARD_READ_COMMAND_BCC    0x2e
 
-  constexpr const byte CARD_READ_CMD_LEN = 15;
-}
+#define  RESP_LENGTH              26
+#define  CARD_UID_LEN             4
+#define  CARD_READ_CMD_LEN        15
+
+#define SERIAL_READ_TICK_TIMEOUT 5
 
 class CardReader {
-  static const byte readCardCommand[CFMH201::FrameBytes::CARD_READ_CMD_LEN];
+  static const byte readCardCommand[CARD_READ_CMD_LEN];
 
-  static uint8_t CardUID[CFMH201::FrameBytes::CARD_UID_LEN];
-  static uint8_t CardUIDold[CFMH201::FrameBytes::CARD_UID_LEN];
-  uint8_t incomingBytes[CFMH201::FrameBytes::RESP_LENGTH];
+  static uint8_t CardUID[CARD_UID_LEN];
+  static uint8_t CardUIDold[CARD_UID_LEN];
+  uint8_t incomingBytes[RESP_LENGTH];
 
   int64_t requestTime = 0;
   bool requestSent;
