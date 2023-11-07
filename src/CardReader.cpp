@@ -48,78 +48,49 @@ const byte CardReader::readCardCommand[CARD_READ_CMD_LEN] = {
 byte CardReader::CardUID[CARD_UID_LEN] = { 0, 0, 0, 0 };
 byte CardReader::CardUIDold[CARD_UID_LEN] = { 0xFF, 0xFF, 0xFF, 0xFF };
 
-#ifndef CARD_READER_HARDWARE_SERIAL
 CardReader::CardReader(
+#ifndef CARD_READER_HARDWARE_SERIAL
   uint8_t rx,
   uint8_t tx,
-  readCardCB callback,
-  uint16_t priority,
-  uint16_t requestFrequency
-) :
-  serial(rx, tx),
-  callback(callback),
-  priority(priority),
-  requestFrequency(requestFrequency) {
-}
-#else
-CardReader::CardReader(
-  readCardCB callback,
-  uint16_t priority,
-  uint16_t requestFrequency
-) :
-  serial(CARD_READER_HARDWARE_SERIAL),
-  callback(callback),
-  priority(priority),
-  requestFrequency(requestFrequency) {
-}
 #endif
+  readCardCB callback,
+  uint16_t priority,
+  uint16_t requestFrequency
+) :
+#ifndef CARD_READER_HARDWARE_SERIAL
+  serial(rx, tx),
+#else
+  serial(CARD_READER_HARDWARE_SERIAL),
+#endif
+  callback(callback),
+  priority(priority),
+  requestFrequency(requestFrequency) {
+}
 
 
 void CardReader::setup() {
   serial.begin(9600);
-}
-
-
-uint8_t CardReader::calcBCC(const byte* buffer, uint8_t buffSize) {
-  uint8_t BCC = 0;
-  for (int i = 1; i < (buffSize - 2); ++i)
-    BCC ^= buffer[i];
-  return BCC;
-}
-
-/* Read bytes from card reader via serial */
-bool CardReader::readCardBytes() {
-  if (serial.available() <= 0) return false;
-  for (int i = 0; i < RESP_LENGTH; i++) {
-    int a = 0;
-    while (serial.available() <= 0) {
-      delayMicroseconds(1);
-      if (++a > SERIAL_READ_TICK_TIMEOUT)
-        return false;
-    }
-
-    incomingBytes[i] = serial.read();
-  }
-  return true;
+  serial.setTimeout(SERIAL_READ_TICK_TIMEOUT);
 }
 
 /* Needs to be called in your loop function */
 void CardReader::process() {
-  static int it = 0;
-  static int64_t loopCnt = 0;
   if ((++loopCnt) % priority) return;
   if (millis() - requestTime > requestFrequency) {
     serial.write(readCardCommand[it]);
-    ++it;
-    if (it == CARD_READ_CMD_LEN) {
+    if (++it == CARD_READ_CMD_LEN) {
       requestTime = millis();
       it = 0;
     }
   }
 
-  if (!readCardBytes()) return;
-  if (calcBCC(incomingBytes, RESP_LENGTH) != incomingBytes[RESP_LENGTH - 2])
-    return;
+  if (serial.available() < 26) return;
+  if (serial.readBytes(incomingBytes, RESP_LENGTH) != RESP_LENGTH) return;
+  serial.flush();
+
+  uint8_t BCC = 0;
+  for (int i = 1; i < RESP_LENGTH - 2; ++i) BCC ^= incomingBytes[i];
+  if (BCC != incomingBytes[RESP_LENGTH - 2]) return;
 
   memcpy(CardUID, incomingBytes + CARD_UID_OFFSET, CARD_UID_LEN);
   if (memcmp(CardUIDold, CardUID, CARD_UID_LEN)) {
@@ -127,7 +98,5 @@ void CardReader::process() {
     return;
   }
   memset(CardUIDold, 0, CARD_UID_LEN);
-  if (callback != nullptr)
-    callback(CardUID);
-  return;
+  if (callback != nullptr) callback(CardUID);
 }

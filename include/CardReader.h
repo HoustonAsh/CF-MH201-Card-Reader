@@ -31,7 +31,10 @@
 #define CARDREADER_H
 
 #include "Arduino.h"
+
+#ifndef CARD_READER_HARDWARE_SERIAL
 #include <SoftwareSerial.h>
+#endif
 
 #define CARD_STX                 0x02
 #define CARD_STATION_ID          0x00
@@ -48,13 +51,13 @@
 #define CARD_ETX                 0x03
 #define CARD_PIN                 0x21
 #define CARD_WRITE_CMD_LEN       0x1F
-#define CARD_READ_COMMAND_BCC    0x2e
+#define CARD_READ_COMMAND_BCC    0x2E
 
 #define CARD_READ_CMD_LEN        15
 #define RESP_LENGTH              26
 #define CARD_UID_LEN             4
 #define CARD_UID_OFFSET          4
-#define SERIAL_READ_TICK_TIMEOUT 5
+#define SERIAL_READ_TICK_TIMEOUT 1
 
 class CardReader {
   static const byte readCardCommand[CARD_READ_CMD_LEN];
@@ -63,8 +66,9 @@ class CardReader {
   static uint8_t CardUIDold[CARD_UID_LEN];
   uint8_t incomingBytes[RESP_LENGTH];
 
+  uint8_t it = 0;
+  int64_t loopCnt = 0;
   int64_t requestTime = 0;
-  bool requestSent;
 
   typedef void (*readCardCB)(const uint8_t* CardUID);
 
@@ -81,17 +85,12 @@ class CardReader {
 public:
 
 #ifndef CARD_READER_HARDWARE_SERIAL
-  CardReader(uint8_t rx, uint8_t tx, readCardCB callback = nullptr, uint16_t priority = 60, uint16_t requestFrequency = 200);
+  CardReader(uint8_t rx, uint8_t tx, readCardCB callback = nullptr, uint16_t priority = 200, uint16_t requestFrequency = 300);
 #else
-  CardReader(readCardCB callback = nullptr, uint16_t priority = 200, uint16_t requestFrequency = 200);
+  CardReader(readCardCB callback = nullptr, uint16_t priority = 200, uint16_t requestFrequency = 300);
 #endif
   void setup();
   void process();
-
-private:
-  uint64_t startMillis;
-  bool readCardBytes();
-  static uint8_t calcBCC(const byte* buffer, uint8_t buffSize);
 };
 
 #endif
