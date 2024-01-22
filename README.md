@@ -61,6 +61,8 @@ void loop() {
 }
 ```
 
+
+// NOT WORKING
 Note: You can also define your serial in platformio.ini:
 ```
 build_flags =
