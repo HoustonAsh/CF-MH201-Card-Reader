@@ -44,6 +44,7 @@ const byte CardReader::readCardCommand[CARD_READ_CMD_LEN] = {
   CARD_ETX,
 };
 
+const byte CardReader::cmdHead[CARD_CMD_HEAD] = { CARD_STX, CARD_STATION_ID, 0x15, 0x00 };
 
 byte CardReader::CardUID[CARD_UID_LEN] = { 0, 0, 0, 0 };
 byte CardReader::CardUIDold[CARD_UID_LEN] = { 0xFF, 0xFF, 0xFF, 0xFF };
@@ -84,19 +85,25 @@ void CardReader::process() {
     }
   }
 
-  if (serial.available() < 26) return;
-  if (serial.readBytes(incomingBytes, RESP_LENGTH) != RESP_LENGTH) return;
-  serial.flush();
+  for (int i = 0; i < CARD_CMD_HEAD; ++i) {
+    int read = serial.read();
+    if (read != int(cmdHead[i])) return;
+    incomingBytes[i] = read;
+  }
+
+  if (serial.readBytes(incomingBytes + CARD_CMD_HEAD, RESP_LENGTH - CARD_CMD_HEAD) != RESP_LENGTH - CARD_CMD_HEAD) return;
 
   uint8_t BCC = 0;
   for (int i = 1; i < RESP_LENGTH - 2; ++i) BCC ^= incomingBytes[i];
   if (BCC != incomingBytes[RESP_LENGTH - 2]) return;
 
   memcpy(CardUID, incomingBytes + CARD_UID_OFFSET, CARD_UID_LEN);
-  if (memcmp(CardUIDold, CardUID, CARD_UID_LEN)) {
+  if (memcmp(CardUIDold, CardUID, CARD_UID_LEN) || millis() - parsedTime > CARD_READ_TIME_DELTA) {
     memcpy(CardUIDold, CardUID, CARD_UID_LEN);
+    parsedTime = millis();
     return;
   }
+
   memset(CardUIDold, 0, CARD_UID_LEN);
   if (callback != nullptr) callback(CardUID);
 }

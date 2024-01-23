@@ -57,9 +57,13 @@
 #define RESP_LENGTH              26
 #define CARD_UID_LEN             4
 #define CARD_UID_OFFSET          4
+#define CARD_CMD_HEAD            4
 #define SERIAL_READ_TICK_TIMEOUT 1
 
+#define CARD_READ_TIME_DELTA 1000
+
 class CardReader {
+  static const byte cmdHead[CARD_CMD_HEAD];
   static const byte readCardCommand[CARD_READ_CMD_LEN];
 
   static uint8_t CardUID[CARD_UID_LEN];
@@ -69,6 +73,7 @@ class CardReader {
   uint8_t it = 0;
   int64_t loopCnt = 0;
   int64_t requestTime = 0;
+  int64_t parsedTime = 0;
 
   typedef void (*readCardCB)(const uint8_t* CardUID);
 

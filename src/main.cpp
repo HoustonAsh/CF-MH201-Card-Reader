@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include "CardReader.h"
 
-CardReader cardReader([](const uint8_t* CardUID) {
+CardReader cardReader(52, 53, [](const uint8_t* CardUID) {
   for (int i = 0; i < 4; i++) {
     Serial.print(" ");
     Serial.print(CardUID[i], HEX);
