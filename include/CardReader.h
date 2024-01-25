@@ -58,7 +58,7 @@
 #define CARD_UID_LEN             4
 #define CARD_UID_OFFSET          4
 #define CARD_CMD_HEAD            4
-#define SERIAL_READ_TICK_TIMEOUT 1
+#define SERIAL_READ_TICK_TIMEOUT 0
 
 #define CARD_READ_TIME_DELTA 1000
 
@@ -68,7 +68,6 @@ class CardReader {
 
   static uint8_t CardUID[CARD_UID_LEN];
   static uint8_t CardUIDold[CARD_UID_LEN];
-  uint8_t incomingBytes[RESP_LENGTH];
 
   uint8_t it = 0;
   int64_t loopCnt = 0;
@@ -87,8 +86,10 @@ class CardReader {
   int priority;
   int requestFrequency;
 
-public:
+  void sendRequest();
+  void readResponse();
 
+public:
 #ifndef CARD_READER_HARDWARE_SERIAL
   CardReader(uint8_t rx, uint8_t tx, readCardCB callback = nullptr, uint16_t priority = 200, uint16_t requestFrequency = 300);
 #else

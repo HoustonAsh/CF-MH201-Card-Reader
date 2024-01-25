@@ -17,5 +17,11 @@ void setup() {
   Serial.println();
 }
 void loop() {
+  unsigned long t = millis();
   cardReader.process();
+
+  unsigned long dt = millis() - t;
+  if (dt > 2) {
+    Serial.println((String)"[LOOP] slow frame: " + dt);
+  }
 }

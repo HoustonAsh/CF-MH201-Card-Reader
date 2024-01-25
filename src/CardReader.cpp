@@ -74,9 +74,8 @@ void CardReader::setup() {
   serial.setTimeout(SERIAL_READ_TICK_TIMEOUT);
 }
 
-/* Needs to be called in your loop function */
-void CardReader::process() {
-  if ((++loopCnt) % priority) return;
+
+void CardReader::sendRequest() {
   if (millis() - requestTime > requestFrequency) {
     serial.write(readCardCommand[it]);
     if (++it == CARD_READ_CMD_LEN) {
@@ -84,26 +83,49 @@ void CardReader::process() {
       it = 0;
     }
   }
+}
 
-  for (int i = 0; i < CARD_CMD_HEAD; ++i) {
-    int read = serial.read();
-    if (read != int(cmdHead[i])) return;
-    incomingBytes[i] = read;
-  }
 
-  if (serial.readBytes(incomingBytes + CARD_CMD_HEAD, RESP_LENGTH - CARD_CMD_HEAD) != RESP_LENGTH - CARD_CMD_HEAD) return;
+void CardReader::readResponse() {
+  static uint8_t buf[RESP_LENGTH];
+  static int bufIndex = 0;
 
-  uint8_t BCC = 0;
-  for (int i = 1; i < RESP_LENGTH - 2; ++i) BCC ^= incomingBytes[i];
-  if (BCC != incomingBytes[RESP_LENGTH - 2]) return;
+  int read = serial.read();
+  if (read == -1) return;
 
-  memcpy(CardUID, incomingBytes + CARD_UID_OFFSET, CARD_UID_LEN);
-  if (memcmp(CardUIDold, CardUID, CARD_UID_LEN) || millis() - parsedTime > CARD_READ_TIME_DELTA) {
-    memcpy(CardUIDold, CardUID, CARD_UID_LEN);
-    parsedTime = millis();
+  buf[bufIndex] = read;
+  ++bufIndex;
+
+  if (bufIndex <= CARD_CMD_HEAD) {
+    if (read != int(cmdHead[bufIndex - 1])) {
+      bufIndex = 0;
+      return;
+    }
     return;
   }
 
-  memset(CardUIDold, 0, CARD_UID_LEN);
-  if (callback != nullptr) callback(CardUID);
+  if (bufIndex == RESP_LENGTH) {
+    bufIndex = 0;
+
+    uint8_t BCC = 0;
+    for (int i = 1; i < RESP_LENGTH - 2; ++i) BCC ^= buf[i];
+    if (BCC != buf[RESP_LENGTH - 2]) return;
+
+    memcpy(CardUID, buf + CARD_UID_OFFSET, CARD_UID_LEN);
+    if (memcmp(CardUIDold, CardUID, CARD_UID_LEN) || millis() - parsedTime > CARD_READ_TIME_DELTA) {
+      memcpy(CardUIDold, CardUID, CARD_UID_LEN);
+      parsedTime = millis();
+      return;
+    }
+
+    memset(CardUIDold, 0, CARD_UID_LEN);
+    if (callback != nullptr) callback(CardUID);
+  }
+}
+
+/* Needs to be called in your loop function */
+void CardReader::process() {
+  if ((++loopCnt) % priority) return;
+  sendRequest();
+  readResponse();
 }
